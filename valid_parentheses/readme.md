@@ -1,6 +1,6 @@
 # 2020春招名企前端准备课
-
 ## 算法核心   leetcode 剑指offer 
+[记一次手撕算法面试：字节跳动的面试官把我四连击了](https://juejin.im/post/5ddfa3def265da05ef59fe6e)
 
 - 开始 有效括号简单算法题
 leetcode 20 
@@ -34,3 +34,10 @@ tmpMax 来计算， 左右括号， 下标之间做减速， 得出长度
 学习算法， 有没有专门思考或训练  easy-hard 
 空间复杂度， 时间复杂度 
 有水份？ 自然成长  刚度
+
+- 最后
+优化？   存下标， 时间复杂度O(n) 不太可能再减 
+空间复杂度 ？ stack O(n) -> O(1) 不能定义栈
+left right  O(1)
+  1. ()  2*right  max
+  2. left < right   ()) 有效匹配结束 left = right = 0
