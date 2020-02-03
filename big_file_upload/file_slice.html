@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <input type="file" id="file">
+  <script>
+  document
+    .getElementById('file')
+    .addEventListener('change', (event) => {
+      const file = event.target.files[0]; //es6 文件对象
+      console.log(file);
+      //console.log(Object.prototype.toString.call(file));//[object File]
+      //console.log(Object.prototype.toString.call(file.slice(0, 102400))); //array slice 
+      let cur = 0, size = 1024*1024; //1M
+      const fileChunkList = []; //blob 数组
+      while(cur < file.size) {
+        fileChunkList.push({
+          // cur start offset  end 
+          file: file.slice(cur, cur + size)
+        });
+        cur += size;
+      }
+      console.log(fileChunkList);
+    })
+  </script>
+</body>
+</html>
