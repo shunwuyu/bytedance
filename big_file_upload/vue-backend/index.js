@@ -24,6 +24,11 @@ server.on("request", async (req, res) => {
     //上传切片处理 
     await controller.handleFormData(req, res);
   }
+
+  if (req.url == '/merge') { //合并
+    await controller.handleMerge(req, res);
+    return ;
+  }
 })
 
 server.listen(3000, () => console.log("正在监听3000端口"));

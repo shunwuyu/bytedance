@@ -6,6 +6,32 @@ const UPLOAD_DIR = path.resolve(__dirname, "..", "target");
 const extractExt = filename => 
   filename.slice(filename.lastIndexOf("."), filename.length)
 
+const pipeStream = (path, writeStream) =>
+  new Promise(resolve => {
+    const readStream = fse.createReadStream(path);
+    readStream.on('end', () => {
+      resolve();
+    });
+    readStream.pipe(writeStream);
+  })
+
+
+const mergeFileChunk = async (filePath, fileHash, size) => {
+  const chunkDir = path.resolve(UPLOAD_DIR, fileHash);
+  const chunkPaths = await fse.readdir(chunkDir);
+  chunkPaths.sort((a, b) => a.split("-")[1] - b.split("-")[1]);
+  await Promise.all(
+    chunkPaths.map((chunkPath, index) => 
+      pipeStream(
+        path.resolve(chunkDir, chunkPath),
+        fse.createWriteStream(filePath, {
+          start: index * size,
+          end: (index + 1) * size
+        })
+    ))
+  )
+}
+
 const resolvePost = req => 
   new Promise(resolve => {
     // post 慢慢的来的
@@ -78,4 +104,18 @@ module.exports = class {
       res.end("received file chunk");
     })
   } 
+  async handleMerge(req, res) {
+    const data = await resolvePost(req);
+    const { fileHash, filename, size } = data
+    const ext = extractExt(filename); //.jpeg
+    const filePath = path.resolve(UPLOAD_DIR, `${fileHash}${ext}`);
+    console.log(filePath);
+    await mergeFileChunk(filePath, fileHash, size);
+    res.end(
+      JSON.stringify({
+        code: 0,
+        message: "file merged success"
+      })
+    )
+  }
 }

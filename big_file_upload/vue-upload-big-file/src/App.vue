@@ -3,6 +3,8 @@
     <div>
       <input type="file" @change="handleFileChange"/>
       <el-button @click="handleUpload">上传</el-button>
+      <el-button @click="handleResume">恢复</el-button>
+      <el-button @click="handlePause">暂停</el-button>
     </div>
     <div>
       <div>计算文件hash</div>
@@ -78,6 +80,25 @@ export default {
     requestList: [] // xhr  
   }),
   methods: {
+    async handleResume () {
+      this.status = Status.uploading;
+      const { uploadedList } = await this.verifyUpload(
+        this.container.file.name,
+        this.container.hash
+      )
+      await this.uploadChunks(uploadedList);
+    },
+    handlePause () {
+      this.status = Status.pause; // 状态停
+      this.resetData();
+    },
+    resetData () {
+      this.requestList.forEach(xhr => xhr.abort())
+      this.requestList = [];
+      if (this.container.worker) { //hash 计算过程中
+        this.container.worker.onmessage = null;
+      }
+    },
     request({
       url,
       method = 'POST',
@@ -138,6 +159,7 @@ export default {
       // 大量的任务
       if (!this.container.file) return;
       this.status = Status.uploading;
+
       const fileChunkList = this.createFileChunk(this.container.file);
       console.log(fileChunkList);
       this.container.hash = await this.calculateHash(fileChunkList);
@@ -183,7 +205,26 @@ export default {
           })
         )
       await Promise.all(requestList);
+      // 之前上传的切片数量+本次上传的切片数量=所有切片数量
+      if (uploadedList.length + requestList.length == this.data.length) {
+        await this.mergeRequest();
+      }
       console.log('可以发送合并请求了');
+    },
+    async mergeRequest() {
+      await this.request({
+        url: 'http://localhost:3000/merge',
+        headers: {
+          "content-type": "application/json"
+        },
+        data: JSON.stringify({
+          size: SIZE,
+          fileHash: this.container.hash,
+          filename: this.container.file.name
+        })
+      })
+      this.$message.success('上传成功');
+      this.status = Status.wait;
     },
     createProgressHandler (item) {
       return e => {
@@ -221,6 +262,9 @@ export default {
       const [ file ] = e.target.files; // 拿到第一个文件
       // console.log(e.target.files);
       this.container.file = file;
+      this.resetData();
+      Object.assign(this.$data, this.$options.data());
+      
     }
   },
   components: {
