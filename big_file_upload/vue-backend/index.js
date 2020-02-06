@@ -19,6 +19,11 @@ server.on("request", async (req, res) => {
     // res.end('verify');
     await controller.handleVerifyUpload(req, res)
   }
+
+  if (req.url == '/') {
+    //上传切片处理 
+    await controller.handleFormData(req, res);
+  }
 })
 
 server.listen(3000, () => console.log("正在监听3000端口"));
